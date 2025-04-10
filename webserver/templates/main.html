@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="static/use_custom_icon_here">
+  <title>Temperature Monitoring</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body
+    {
+      font-family: "Lato", sans-serif;
+      background-color: #202124;
+    }
+
+    .date
+    {
+      background-color: #323438;
+      border: none;
+      color: white;
+      width: 100px;
+      height: 30px;
+      border-radius: 4px;
+    }
+
+    .sensor
+    {
+      background-color: #323438;
+      border: none;
+      color: white;
+      width: 10%;
+      height: 30px;
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 20;
+    }
+
+    .container
+    {
+      display: inline-block;
+      margin-left: 10px;
+    }
+
+    .container input
+    {
+      margin-right: 5px;
+      background-color: #323438;
+      border: none;
+      color: white;
+      width: 10%;
+      border-radius: 4px;
+    }
+
+    .sensor:hover
+    {
+      background-color: #414a5c;
+    }
+
+    button[id^='dur_']:hover
+    {
+      background-color: #414a5c !important;
+      cursor: pointer;
+    }
+
+    .bar
+    {
+      height: 10%;
+    }
+
+    .tablink
+    {
+      background-color: #323438;
+      color: white;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      font-size: 17px;
+      width: 20%;
+    }
+
+    .tablink:hover
+    {
+      background-color: #414a5c;
+    }
+
+    .tabcontent
+    {
+      color: white;
+      display: none;
+      padding: 10vh;
+      height: 50vh;
+    }
+
+    .inner
+    {
+      padding: 5px;
+      display: flex;
+    }
+
+    button:last-child
+    {
+      margin-left: auto;  
+    }
+
+    #select
+    {
+      margin-left: 8px;
+      margin-right: 8px;
+    }
+
+    .spinner
+    {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #b9b9b9;
+      border-top: 5px solid #137bb1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      pointer-events: none;
+    }
+  
+    @keyframes spin
+    {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    ul li {
+      margin-bottom: 10px;
+    }
+    
+    ul {
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+</head>
+
+<body>
+  <div style="height: 12vh">
+    <img src="static/use_custom_logo_here" alt="" style="float:right; width:auto; height:7vh">
+    <h1 style="color:white">Temperature Monitoring</h1>
+  </div>
+  <div>
+    <button class="tablink" onclick="openTab('Temperature', this, '#25588b')" id="defaultOpen">Temperature</button>
+    <button class="tablink" onclick="openTab('Pressure', this, '#25588b')">Pressure</button>
+    <button class="tablink" onclick="openTab('Humidity', this, '#25588b')">Humidity</button>
+    <button class="tablink" onclick="openTab('Light', this, '#25588b')">Light</button>
+    <button class="tablink" onclick="openTab('Data', this, '#25588b')">Data & Sensor-Position</button>
+  </div>
+
+  <div id="Temperature" class="tabcontent">
+    <canvas id="temperature" style="display: block; width: 100%; height: 100%;"></canvas>
+    <div id="load_temperature" style="position: absolute; top: 0; left: 0; 
+        width: 100%; height: 100%; display: none; background: rgba(255, 255, 255, 0.2); 
+        display: flex; justify-content: center; align-items: center;">
+      <div class="spinner"></div>
+    </div>
+      <button class="sensor" id="dur_temperature6" style="width: 5%;" onclick="buttonClick(6)">6h</button>
+      <button class="sensor" id="dur_temperature24" style="width: 5%;" onclick="buttonClick(24)">24h</button>
+      <button class="sensor" id="dur_temperature72" style="width: 5%;" onclick="buttonClick(72)">3d</button>
+      <button class="sensor" id="dur_temperature168" style="width: 5%;" onclick="buttonClick(168)">7d</button>
+      <button class="sensor" onclick="downloadChart('temperature')">Download plot</button>
+      <input type="checkbox" id="temperature_check" onclick="checkboxClick(this, 'temperature')">
+      <label for="temperature_check">Limit Y-axis</label>
+      <div id="temperature_check_container" class="container" style="display: none;">
+        <label for="temperature_min">Min:</label>
+        <input type="text" maxlength="4" id="temperature_min"/>
+        <label for="temperature_max">Max:</label>
+        <input type="text" maxlength="4" id="temperature_max"/>
+      </div>
+      <a id="temperatureLink" download="temperature.png" hidden></a>
+  </div>
+  
+  <div id="Pressure" class="tabcontent">
+    <canvas id="pressure" style="display: block; width: 100%; height: 100%;"></canvas>
+    <div id="load_pressure" style="position: absolute; top: 0; left: 0; 
+        width: 100%; height: 100%; display: none; background: rgba(255, 255, 255, 0.2); 
+        display: flex; justify-content: center; align-items: center; z-index: 10;">
+      <div class="spinner"></div>
+    </div>
+    <button class="sensor" id="dur_pressure6" style="width: 5%" onclick="buttonClick(6)">6h</button>
+    <button class="sensor" id="dur_pressure24" style="width: 5%" onclick="buttonClick(24)">24h</button>
+    <button class="sensor" id="dur_pressure72" style="width: 5%" onclick="buttonClick(72)">3d</button>
+    <button class="sensor" id="dur_pressure168" style="width: 5%" onclick="buttonClick(168)">7d</button>
+    <button class="sensor" onclick="downloadChart('pressure')">Download plot</button>
+    <input type="checkbox" id="pressure_check" onclick="checkboxClick(this, 'pressure')">
+    <label for="pressure_check">Limit Y-axis</label>
+    <div id="pressure_check_container" class="container" style="display: none;">
+      <label for="pressure_min">Min:</label>
+      <input type="text" maxlength="4" id="pressure_min"/>
+      <label for="pressure_max">Max:</label>
+      <input type="text" maxlength="4" id="pressure_max"/>
+    </div>
+    <a id="pressureLink" download="pressure.png" hidden></a>
+  </div>
+  
+  <div id="Humidity" class="tabcontent">
+    <canvas id="humidity" style="display: block; width: 100%; height: 100%;"></canvas>
+    <div id="load_humidity" style="position: absolute; top: 0; left: 0; 
+        width: 100%; height: 100%; display: none; background: rgba(255, 255, 255, 0.2); 
+        display: flex; justify-content: center; align-items: center; z-index: 10;">
+      <div class="spinner"></div>
+    </div>
+    <button class="sensor" id="dur_humidity6" style="width: 5%" onclick="buttonClick(6)">6h</button>
+    <button class="sensor" id="dur_humidity24" style="width: 5%" onclick="buttonClick(24)">24h</button>
+    <button class="sensor" id="dur_humidity72" style="width: 5%" onclick="buttonClick(72)">3d</button>
+    <button class="sensor" id="dur_humidity168" style="width: 5%" onclick="buttonClick(168)">7d</button>
+    <button class="sensor" onclick="downloadChart('humidity')">Download plot</button>
+    <input type="checkbox" id="humidity_check" onclick="checkboxClick(this, 'humidity')">
+    <label for="humidity_check">Limit Y-axis</label>
+    <div id="humidity_check_container" class="container" style="display: none;">
+      <label for="humidity_min">Min:</label>
+      <input type="text" maxlength="4" id="humidity_min"/>
+      <label for="humidity_max">Max:</label>
+      <input type="text" maxlength="4" id="humidity_max"/>
+    </div>
+    <a id="humidityLink" download="humidity.png" hidden></a>
+  </div>
+
+  <div id="Light" class="tabcontent">
+    <canvas id="light" style="display: block; width: 100%; height: 100%;"></canvas>
+    <div id="load_light" style="position: absolute; top: 0; left: 0; 
+        width: 100%; height: 100%; display: none; background: rgba(255, 255, 255, 0.2); 
+        display: flex; justify-content: center; align-items: center; z-index: 10;">
+      <div class="spinner"></div>
+    </div>
+    <button class="sensor" id="dur_light6" style="width: 5%" onclick="buttonClick(6)">6h</button>
+    <button class="sensor" id="dur_light24" style="width: 5%" onclick="buttonClick(24)">24h</button>
+    <button class="sensor" id="dur_light72" style="width: 5%" onclick="buttonClick(72)">3d</button>
+    <button class="sensor" id="dur_light168" style="width: 5%" onclick="buttonClick(168)">7d</button>
+    <button class="sensor" onclick="downloadChart('light')">Download plot</button>
+    <input type="checkbox" id="light_check" onclick="checkboxClick(this, 'light')">
+    <label for="light_check">Limit Y-axis</label>
+    <div id="light_check_container" class="container" style="display: none;">
+      <label for="light_min">Min:</label>
+      <input type="text" maxlength="4" id="light_min"/>
+      <label for="light_max">Max:</label>
+      <input type="text" maxlength="4" id="light_max"/>
+    </div>
+    <a id="lightLink" download="light.png" hidden></a>
+  </div>
+
+  <div id="Data" class="tabcontent">
+  <div class="inner">
+    <label for="datePre" style="margin: 8px;">Select data from: </label>
+    <input class="date" type="date" id="datePre">
+    <label for="datePost" style="margin: 8px;"> to: </label>
+    <input class="date" type="date" id="datePost">
+    <label for="select" style="margin: 8px;"> with sensor: </label>
+    <select class="sensor" name="sensor" id="select" autocomplete="off">
+      <option class="sensor" value="esp1" selected="selected">Sensor 1</option>
+      <option class="sensor" value="esp2">Sensor 2</option>
+      <option class="sensor" value="esp3">Sensor 3</option>
+      <option class="sensor" value="esp4">Sensor 4</option>
+      <option class="sensor" value="esp5">Sensor 5</option>
+      <option class="sensor" value="esp6">Sensor 6</option>
+      <option class="sensor" value="esp7">Sensor 7</option>
+      <option class="sensor" value="esp8">Sensor 8</option>
+    </select>
+    <button class="sensor" onclick="downloadData()">Download</button>
+    <a id="downloadLink" download="data.txt" hidden></a>
+    <button class="sensor" onclick="loadStoredData(true)" style="float: right;">Reset settings</button>
+  </div>
+  <div class="inner">
+    <p style="color: red" id="error"></p>
+  </div>
+  <div class="inner">
+    <img src="static/use_custom_layout_image_here" alt="" style="width:auto; height:10%">
+    <div style="color: white; margin-left: 10px;">
+      <p><b>General features of this site:</b></p>
+      <ul>
+      <li>Hover over a point in the graph to see the actual timestamp and the value of this exact data point.
+          The X-axis is only a rough estimate for the timestamp.</li>
+      <li>Click on a sensor in the legend of a graph to hide the data for this sensor.</li>
+      <li>Ctrl-click on a sensor in the legend of a graph to hide the data for all other sensors.
+          Ctrl-click again on the same sensor to undo.</li>
+      <li>Click on a duration to see the past x hours of data points (this might take a few seconds to load).</li>
+      <li>Press the "Limit Y-axis" button to set a custom Y-axis scale for each graph individually</li>
+      <li>All these change to the graphs are stored during sessions.
+          If you reload the page or reopen after closing the browser all settings are restored.
+          If you press the "Reset settings" button above, the settings are reset to default.</li>
+      <li>You can download the data as a .txt file from above. Python code to load the data into a pandas dataframe is included in the file</li>
+      </ul>
+    </div>
+  </div>
+  </div>
+
+  <script>
+  function checkboxClick(box, plotId)
+  {
+    const check = `${plotId}_check`;
+    if (box.checked)
+    {
+      limitPlot(plotId, document.getElementById(`${plotId}_min`).value, document.getElementById(`${plotId}_max`).value);
+      document.getElementById(check + "_container").style.display = "inline-block";
+      document.getElementById(check).checked = true;
+      dataStorage.limitAxis[plotId].limit = true;
+    }
+    else
+    {
+      limitPlot(plotId, "", "");
+      document.getElementById(check + "_container").style.display = "none";
+      document.getElementById(check).checked = false;
+      dataStorage.limitAxis[plotId].limit = false;
+    }
+    saveDataStorage();
+  }
+
+  function limitPlot(plotId, min, max)
+  {
+    const plot = Chart.getChart(plotId);
+    min = min === "" ? undefined : parseInt(min);
+    max = max === "" ? undefined : parseInt(max);
+    plot.options.scales.y.min = min;
+    plot.options.scales.y.max = max;
+    plot.update();
+  }
+
+  function downloadChart(plotId)
+  {
+    let link = document.getElementById(`${plotId}Link`);
+    const image = Chart.getChart(plotId).toBase64Image("image/png", 1);
+    link.href = image;
+    link.click();
+  }
+
+  function downloadData()
+  {
+    document.getElementById("error").innerHTML = "";
+    dev = document.getElementById("select").value;
+    let [year, month, day] = document.getElementById("datePre").value.split("-");
+    datePre = {"year": parseInt(year), "month": parseInt(month), "day": parseInt(day)};
+    [year, month, day] = document.getElementById("datePost").value.split("-");
+    datePost = {"year": parseInt(year), "month": parseInt(month), "day": parseInt(day)};
+
+    if (datePost.year < datePre.year || datePost.month < datePre.month || datePost.day < datePre.day)
+    {
+      document.getElementById("error").innerHTML = "The 'from' date must be before the 'to' date!";
+      return;
+    }
+    loadFunc = function()
+    {
+      document.getElementById("downloadLink").href = `static/data/${id}.txt`;
+      document.getElementById("downloadLink").click()
+    }
+    const path = `data/${id}/${dev}/${datePre.year}-${datePre.month}-${datePre.day}/${datePost.year}-${datePost.month}-${datePost.day}`;
+    sendXHTTP(path, loadFunc);
+  }
+
+  function sendXHTTP(path, onload, method="GET")
+  {
+      const xhttp = new XMLHttpRequest();
+      xhttp.onload = onload;
+      xhttp.open(method, path);
+      xhttp.send();
+  }
+
+  function updatePlot(plotId)
+  {
+    const loadFunc = function()
+    {
+      const jsonResponse = JSON.parse(this.responseText);
+      const plot = Chart.getChart(plotId);
+      plot.data.labels.shift();
+      plot.data.labels.push(jsonResponse.xdata[1]);
+      for (let i = 0; i < normalSensor; i++)
+      {
+        plot.data.datasets[i].data.shift();
+        plot.data.datasets[i].data.push(jsonResponse.ydata[i]);
+      }
+      plot.update();
+    }
+    sendXHTTP(`update/${plotId}`, loadFunc);
+  }
+
+  function rangePlot(plotId, range)
+  {
+    const overlay = document.getElementById(`load_${plotId}`);
+    overlay.style.display = "flex";
+    const loadFunc = function()
+    {
+      const jsonResponse = JSON.parse(this.responseText);
+      const plot = Chart.getChart(plotId);
+      plot.data.labels = jsonResponse.xdata[0];
+      for (let i = 0; i < normalSensor; i++)
+      {
+        plot.data.datasets[i].labels = jsonResponse.xdata[i];
+        plot.data.datasets[i].data = jsonResponse.ydata[i];
+      }
+      plot.update();
+      overlay.style.display = "none";
+    }
+    sendXHTTP(`range/${plotId}/${range}`, loadFunc);
+  }
+
+  function chartJSLegendClick(e, legendItem, legend)
+  {
+    const datasetIndex = legendItem.datasetIndex;
+    if (e.native.ctrlKey)
+    {
+      for (const id of plotIds)
+      {
+        const plot = Chart.getChart(id);
+        for (let i = 0; i < normalSensor; i++)
+        {
+          let hide = true;
+          if (lastClicked == datasetIndex)
+          {
+            hide = false;
+          }
+          plot.data.datasets[i].hidden = (i == datasetIndex) ? false : hide;
+          dataStorage.sensors[i] = (i == datasetIndex) ? false : hide;
+        }
+        plot.update();
+      }
+      lastClicked = datasetIndex;
+      saveDataStorage();
+      return;
+    }
+    const hidden = !legend.chart.data.datasets[datasetIndex].hidden;
+    for (const id of plotIds)
+    {
+      const plot = Chart.getChart(id);
+      plot.data.datasets[datasetIndex].hidden = hidden;
+      plot.update();
+    }
+    dataStorage.sensors[datasetIndex] = hidden;
+    saveDataStorage();
+  }
+
+  function newChart(plotId)
+  {
+    const title = plotId[0].toUpperCase() + plotId.slice(1);
+    const unit = {"temperature": "°C", "pressure": "Pa", "humidity": "%", "light": "%", "quality": "µm/m³"};
+    const axisLabel = `${title[0]} [${unit[plotId]}]`;
+    let ds = [
+      {label: "Sensor 1", data: [], pointRadius: 1, borderColor: colors["1"][0], backgroundColor: colors["1"][1]},
+      {label: "Sensor 2", data: [], pointRadius: 1, borderColor: colors["2"][0], backgroundColor: colors["2"][1]},
+      {label: "Sensor 3", data: [], pointRadius: 1, borderColor: colors["3"][0], backgroundColor: colors["3"][1]},
+      {label: "Sensor 4", data: [], pointRadius: 1, borderColor: colors["4"][0], backgroundColor: colors["4"][1]},
+      {label: "Sensor 5", data: [], pointRadius: 1, borderColor: colors["5"][0], backgroundColor: colors["5"][1]},
+      {label: "Sensor 6", data: [], pointRadius: 1, borderColor: colors["6"][0], backgroundColor: colors["6"][1]},
+      {label: "Sensor 7", data: [], pointRadius: 1, borderColor: colors["7"][0], backgroundColor: colors["7"][1]},
+      {label: "Sensor 8", data: [], pointRadius: 1, borderColor: colors["8"][0], backgroundColor: colors["8"][1]},
+    ];
+
+    new Chart(plotId,
+    {
+      type: "line",
+      data: 
+      {
+      labels: [],
+      datasets: ds
+      },
+      options:
+      {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {padding: 0},
+      plugins: 
+      {
+        title: {display: true, text: title},
+        tooltip: {callbacks:
+        {
+          label: function(item) {return `${item.dataset.label}: ${Math.trunc(item.dataset.data[item.dataIndex]*100)/100} ${unit[plotId]}`;},
+          title: function(item) {return item[0].dataset.labels[item[0].dataIndex];},
+        },},
+        legend: {onClick: chartJSLegendClick},
+      },
+      scales:
+      {
+        x:
+        {
+          ticks:
+          {
+            callback: function(value) {
+              if (value === 0)
+              {
+                return null;
+              }
+              const date = new Date(Date.parse(this.getLabelForValue(value)));
+              const prev = new Date(Date.parse(this.getLabelForValue(value - 1)));;
+              const mod = duration / 6;
+              if (duration <= 72)
+              {
+                if (prev.getDate() !== date.getDate())
+                {
+                  let min = date.getMinutes();
+                  min = `${String(min-min%10).padStart(2, "0")}`;
+                  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${min}`;
+                }
+                else if (date.getHours() % mod === 0 && date.getHours() !== prev.getHours())
+                {
+                  let min = date.getMinutes();
+                  min = `${String(min-min%10).padStart(2, "0")}`;
+                  return `${String(date.getHours()).padStart(2, "0")}:${min}`;
+                }
+                else
+                {
+                  return null;
+                }
+              }
+              else
+              {
+                if (prev.getDate() !== date.getDate())
+                {
+                  let min = date.getMinutes();
+                  min = `${String(min-min%10).padStart(2, "0")}`;
+                  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${min}`;
+                }
+                else
+                {
+                  return null;
+                }
+              }
+            },
+            maxRotation: 20,
+            minRotation: 20,
+          }
+        },
+        y:
+        {
+          title: {display: true, text: axisLabel}
+        }
+      },
+      }
+    });
+  }
+
+  function openTab(tabName, clicked, color)
+  {
+    const tabcontent = document.getElementsByClassName("tabcontent");
+    for (let i = 0; i < tabcontent.length; i++)
+    {
+      tabcontent[i].style.display = "none";
+    }
+    const tablinks = document.getElementsByClassName("tablink");
+    for (let i = 0; i < tablinks.length; i++)
+    {
+      tablinks[i].style.backgroundColor = "";
+    }
+    document.getElementById(tabName).style.display = "block";
+    clicked.style.backgroundColor = color;
+  }
+
+  function buttonClick(dur)
+  {
+    for (const plot of plotIds)
+    {
+      for (let i of [6, 24, 72, 168])
+      {
+        document.getElementById(`dur_${plot}${i}`).style.backgroundColor = "#323438";
+      }
+      duration = dur;
+      dataStorage.duration = duration;
+      saveDataStorage();
+      clearInterval(timers[plot]);
+      timers[plot] = setInterval(() => {updatePlot(plot);}, Math.max(60000, duration*3600)),
+      document.getElementById(`dur_${plot}${dur}`).style.backgroundColor = "#414a5c";
+      rangePlot(plot, dur);
+    }
+  }
+
+  function loadStoredData(reset = false)
+  {
+    try
+    {
+      if (reset)
+      {
+        throw new SyntaxError();
+      }
+      window.dataStorage = JSON.parse(localStorage.getItem("data"));
+      if (!dataStorage || !dataStorage.limitAxis["light"])
+      {
+        throw new SyntaxError();
+      }
+    }
+    catch (SyntaxError)
+    {
+      window.dataStorage = {
+        "sensors": Array(8).fill(false),
+        "duration": 6,
+        "limitAxis": {
+          "temperature": {"limit": false, "min": "", "max": ""},
+          "pressure": {"limit": false, "min": "", "max": ""},
+          "humidity": {"limit": false, "min": "", "max": ""},
+          "light": {"limit": false, "min": "", "max": ""},
+        },
+        "download": "esp1",
+      };
+    }
+    if (reset)
+    {
+      applyStorageSettings();
+      saveDataStorage();
+    }
+  }
+
+  function saveDataStorage()
+  {
+    localStorage.setItem("data", JSON.stringify(dataStorage));
+  }
+
+  function applyStorageSettings()
+  {
+    // apply default duration
+    document.getElementById(`dur_temperature${dataStorage.duration}`).click();
+
+    for (let plot of plotIds)
+    {
+      // reset all chart legends
+      const chart = Chart.getChart(plot);
+      for (let i = 0; i < normalSensor; i++)
+      {
+        chart.data.datasets[i].hidden = dataStorage.sensors[i];
+      }
+
+      // set all y-limit checkboxes
+      const limit = dataStorage.limitAxis[plot];
+      document.getElementById(`${plot}_check`).checked = limit.limit;
+      document.getElementById(`${plot}_check_container`).style.display = limit.limit ? "inline-block" : "none";
+
+      // set the y-limit mins/ maxs and reset the plots
+      const min = document.getElementById(`${plot}_min`);
+      const max = document.getElementById(`${plot}_max`);
+      min.value = limit.min ? "" : limit.min;
+      max.value = limit.max ? "" : limit.max;
+      limitPlot(plot, min.value, max.value);
+
+      // callback handlers for min/ max inputs to only include digits
+      const inputHandler = function(event) {event.target.value = event.target.value.replace(/\D/g, "")};
+      min.addEventListener("input", inputHandler);
+      max.addEventListener("input", inputHandler);
+
+      // callback handler for min/ max inputs to apply and save settings when inputs get defocused
+      const blurHandler = function() {
+        limitPlot(plot, min.value, max.value);
+        limit.min = min.value;
+        limit.max = max.value;
+        saveDataStorage();
+      };
+      min.addEventListener("blur", blurHandler);
+      max.addEventListener("blur", blurHandler);
+    }
+  
+    // set default download sensor and add callback to save new default
+    document.getElementById("select").value = dataStorage.download;
+    document.getElementById("select").onchange = function (event) {
+      dataStorage.download = event.target.value;
+      saveDataStorage();
+    };
+  }
+
+  // plot colors and plotIds
+  const colors = {
+    "1": ["#36a2eb", "#1f567a"],
+    "2": ["#ff6384", "#a61637"],
+    "3": ["#80e067", "#3c702e"],
+    "4": ["#4bc0c0", "#2f4f4f"],
+    "5": ["#ff9f40", "#8f4a0a"],
+    "6": ["#9966ff", "#3c0ca6"],
+    "7": ["#ffcd56", "#8f650a"],
+    "8": ["#c9cbcf", "#5d5e5e"]
+  };
+
+  let plotIds = ["temperature", "pressure", "humidity", "light"];
+
+  // get current date as default value for data download
+  const id = Date.now();
+
+  // set default duration to 6h and set number of sensors
+  let duration = 6;
+  let normalSensor = 8;
+
+  // last clicked legend item (for ctrl click)
+  let lastClicked;
+
+  // define timers for auto-update
+  // duration * [60 minutes] (= number of data points) / 1000 (max number of data points) * [60 seconds] * [1000 milliseconds]
+  let timers = {
+    "temperature": setInterval(() => {updatePlot("temperature");}, Math.max(60000, duration*3600)),
+    "pressure": setInterval(() => {updatePlot("pressure");}, Math.max(60000, duration*3600)),
+    "humidity": setInterval(() => {updatePlot("humidity");}, Math.max(60000, duration*3600)),
+    "light": setInterval(() => {updatePlot("light");}, Math.max(60000, duration*3600)),
+  };
+
+  // open default tab (for now hard coded: temperature)
+  document.getElementById("defaultOpen").click();
+  
+  // load localStorage
+  loadStoredData();
+
+  // create charts
+  for (const plot of plotIds)
+  {
+    newChart(plot);
+  }
+  
+  // apply loaded storage
+  applyStorageSettings();
+
+  // set current date as value for date select
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("datePre").value = today;
+  document.getElementById("datePost").value = today;
+  </script>
+</body>
+
+</html>
